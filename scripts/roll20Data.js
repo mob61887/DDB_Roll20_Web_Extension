@@ -1,4 +1,4 @@
-importScripts('./utils.js');
+const browserAPI = self.browser || self.chrome;
 
 (function() {
     // Request the character data from the background script

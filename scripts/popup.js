@@ -1,4 +1,4 @@
-importScripts('./utils.js');
+const browserAPI = self.browser || self.chrome;
 
 // Function to dynamically create and inject a button into the popup
 function injectButton(buttonLabel, action) {
