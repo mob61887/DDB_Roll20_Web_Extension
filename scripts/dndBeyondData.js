@@ -258,15 +258,19 @@ function scrapeCharacterData() {
                                     actionTypeItem = {_type: 'activatable_action'};
                                     actionTypeItem.name = actionListContentChild.querySelector('div.ct-feature-snippet__heading ').textContent;
                                     actionTypeItem.description = [...actionListContentChild.querySelector('div.ct-feature-snippet__content').querySelectorAll(':scope p')].map(pElement => pElement.textContent);
-                                    let maxCharges, curCharges;
+                                    let maxCharges, curCharges, resetOn;
                                     if (actionListContentChild.querySelector('div.ct-slot-manager')) {
                                         maxCharges = [...actionListContentChild.querySelector('div.ct-slot-manager').children].filter(ele => ele.classList.contains('ct-slot-manager__slot')).length;
-                                        curCharges = [...actionListContentChild.querySelector('div.ct-slot-manager').children].filter(ele => ele.classList.contains('ct-slot-manager__slot') && ele.getAttribute('aria-checked') === false).length;
+                                        curCharges = maxCharges - [...actionListContentChild.querySelector('div.ct-slot-manager').children].filter(ele => ele.classList.contains('ct-slot-manager__slot') && ele.getAttribute('aria-checked') === true).length;
                                     } 
                                     else if (actionListContentChild.querySelector('div.ct-feature-snippet__limited-use-usages')?.textContent) {
                                         maxCharges = actionListContentChild.querySelector('div.ct-feature-snippet__limited-use-usages').textContent;
                                         curCharges = actionListContentChild.querySelector('.ct-slot-manager-large__value.ct-slot-manager-large__value--cur').textContent;
                                     }
+                                    resetOn = actionListContentChild.querySelector('div.ct-feature-snippet__limited-use-reset')?.textContent;
+                                    if (maxCharges) actionTypeItem.maxCharges = maxCharges;
+                                    if (curCharges) actionTypeItem.curCharges = curCharges;
+                                    if (resetOn) actionTypeItem.resetOn = resetOn;
                                 } catch(error) {
                                     characterData.errors.push({func: getActions, actionType: 'actions-activatable_action', actionTypeItem: actionListContentChild.querySelector('div.ct-feature-snippet__heading ').textContent, error});
                                 }
@@ -285,7 +289,6 @@ function scrapeCharacterData() {
 
             function clearErrors(characterData, triesLeft) {
                 if (triesLeft === 0) {
-                    console.log("Exhausted all tries without resolving errors.");
                     console.log(characterData);
                     const msg = {
                         action: 'notification',
@@ -295,24 +298,16 @@ function scrapeCharacterData() {
                     browserAPI.runtime.sendMessage(msg);
                     return;
                 }
-            
-                console.log(`Clearing errors, tries left: ${triesLeft}`);
-                // Get a unique set of functions that had errors
+
                 const funcs = [...new Set(characterData.errors.map(error => error.func))];
-                
-                // Clear the errors before retrying
+
                 characterData.errors = [];
-            
-                // Call each unique function once
+
                 funcs.forEach(func => func(characterData));
-                
-                console.log("Remaining errors after processing:", characterData.errors);
             
                 if (characterData.errors.length) {
-                    console.log("Retrying due to remaining errors...");
                     return setTimeout(() => clearErrors(characterData, triesLeft - 1), retryDelay);
                 } else {
-                    console.log("All errors cleared successfully.");
                     console.log(characterData);
                     const msg = {
                         action: 'storeData',
@@ -325,8 +320,6 @@ function scrapeCharacterData() {
             }            
             
             clearErrors(characterData, 3);
-
-
 
         } else if (retriesLeft > 0) {
             console.log('Element not found, retrying...');
