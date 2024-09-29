@@ -1,0 +1,1 @@
+const browserAPI = window.browser || window.chrome;
